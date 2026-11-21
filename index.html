@@ -93,7 +93,7 @@ textarea{width:100%;margin-top:6px;border:1px solid rgba(184,137,60,.5);border-r
   <div class="wrap">
     <div class="script rv">Today’s</div>
     <div class="big caps rv z">Menu</div>
-    <div class="date rv">Lunch day · Sunday, 22 November 2026</div>
+    <div class="date rv" id="mdate"></div>
     <div class="gold"></div>
   </div>
 </section>
@@ -113,14 +113,14 @@ textarea{width:100%;margin-top:6px;border:1px solid rgba(184,137,60,.5);border-r
 </section>
 
 <script>
-var WHATSAPP = "917827493779"; // optional fallback, e.g. "919876543210"
+var MENU_DATE = "Sunday, 22 November 2026"; // change this each day
 var DISHES = [
   {course:"Starter", name:"Chilli Pearl, Dusk Tartlet", desc:"Two small surprises to begin: one with a spark of heat, one with the earthy hush of dusk", emoji:"🥟🥧"},
   {course:"Main", name:"Crimson Silk", desc:"Velvety, slow-simmered and deep red, a comfort you will want to finish to the last spoon, served with rice", emoji:"🍛"},
   {course:"Dessert", name:"Petite Noir with cacao crumb", desc:"Tiny, dark and delightfully sweet, finished with a whisper of cacao", emoji:"🍩"},
   {course:"Beverage", name:"Water, Umami Glow", desc:"Pure water to refresh, and a warm, deeply savoury glow to close", emoji:"🍵"}
 ];
-var dayKey = "2026-11-22";
+var dayKey = MENU_DATE; document.getElementById('mdate').textContent = 'Lunch day · ' + MENU_DATE;
 function mk(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
 var cs=document.getElementById('courses'), fb=document.getElementById('fb'), ratings={}, comments={};
 DISHES.forEach(function(d,i){
@@ -172,23 +172,26 @@ var io=('IntersectionObserver' in window)?new IntersectionObserver(function(es){
 },{threshold:.2,rootMargin:'0px 0px -6% 0px'}):null;
 Array.prototype.forEach.call(document.querySelectorAll('.rv'),function(el){io?io.observe(el):el.classList.add('in')});
 
-var db=null;
-try{window.claude.use('db').then(function(x){db=x}).catch(function(){})}catch(e){}
+var FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSfCMIALtna01BLP3eGHnrJIwOgTEQAfwTaE1wU9_fPxkpaPlg/formResponse';
+var RATING_ENTRIES=['entry.1773713668','entry.1124896817','entry.1311617681','entry.783295225']; // Starter, Main, Dessert, Beverage
 document.getElementById('send').onclick=function(){
   var btn=this,msg=document.getElementById('msg');
-  var items=DISHES.map(function(d,i){return{dish:d.name,stars:ratings[i]||0,comment:(comments[i]||'').trim()}}).filter(function(x){return x.stars||x.comment});
-  if(!items.length){msg.textContent='Please rate at least one dish.';return}
-  btn.disabled=true;
-  var done=function(){msg.textContent='Thank you! Your feedback means a lot to us. 🤍'};
-  var fail=function(){
-    if(WHATSAPP){
-      var t='Feedback ('+dayKey+')\n'+items.map(function(x){return x.dish+': '+x.stars+'/5 '+x.comment}).join('\n');
-      window.open('https://wa.me/'+WHATSAPP+'?text='+encodeURIComponent(t),'_blank');done();
-    }else{msg.textContent='Sorry, feedback could not be sent. Please tell your server.';btn.disabled=false}
-  };
-  if(!db){fail();return}
-  var id=dayKey+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-  db.doc('feedback/'+id).set({date:dayKey,items:items,at:Date.now()}).then(done).catch(fail);
+  var missing=DISHES.some(function(d,i){return !ratings[i]});
+  if(missing){msg.textContent='Please give a star rating to each dish.';return}
+  btn.disabled=true;msg.textContent='Sending\u2026';
+  var p=new URLSearchParams();
+  p.append('entry.1771837323','Guest (QR page)');
+  var dt=new Date(MENU_DATE.replace(/^[A-Za-z]+,\s*/,''));
+  if(isNaN(dt.getTime()))dt=new Date();
+  var y=dt.getFullYear(),m=dt.getMonth()+1,dd=dt.getDate();
+  p.append('entry.919612179',y+'-'+('0'+m).slice(-2)+'-'+('0'+dd).slice(-2));
+  p.append('entry.919612179_year',y);p.append('entry.919612179_month',m);p.append('entry.919612179_day',dd);
+  RATING_ENTRIES.forEach(function(k,i){p.append(k,ratings[i])});
+  var say=DISHES.map(function(d,i){var c=(comments[i]||'').trim();return c?d.name+': '+c:''}).filter(Boolean).join('\n');
+  p.append('entry.132525993',say||'-');
+  fetch(FORM_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()})
+  .then(function(){msg.textContent='Thank you! Your feedback means a lot to us. \U0001F90D'})
+  .catch(function(){msg.textContent='Sorry, feedback could not be sent. Please tell your server.';btn.disabled=false});
 };
 </script>
 </body></html>
