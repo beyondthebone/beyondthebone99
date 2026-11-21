@@ -57,6 +57,7 @@ h2{font-weight:600;font-size:clamp(2rem,8vw,2.8rem);color:var(--mar);margin:0 0 
 .stars button.on{color:var(--gold);animation:st .35s}
 @keyframes st{50%{transform:scale(1.6) rotate(12deg)}}
 textarea{width:100%;margin-top:6px;border:1px solid rgba(184,137,60,.5);border-radius:12px;padding:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:1.05rem;resize:vertical}
+.nm{width:100%;margin-bottom:16px;border:1px solid rgba(184,137,60,.5);border-radius:99px;padding:13px 18px;background:var(--card);color:var(--ink);font:inherit;font-size:1.2rem;text-align:center}
 .go{width:100%;padding:15px;border:0;border-radius:99px;background:var(--mar);color:#fff;font:600 1.15rem 'Cormorant Garamond',serif;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 26px rgba(107,22,22,.3)}
 .go:disabled{opacity:.55}
 #msg{margin-top:14px;color:var(--mut);font-style:italic}
@@ -104,6 +105,7 @@ textarea{width:100%;margin-top:6px;border:1px solid rgba(184,137,60,.5);border-r
   <div class="wrap">
     <p class="kick rv">Your turn</p>
     <h2 class="rv r">How was it?</h2>
+    <input id="cname" class="nm rv" type="text" maxlength="60" placeholder="Your name" autocomplete="name" aria-label="Your name">
     <div id="fb"></div>
     <button class="go rv" id="send">Send feedback</button>
     <div id="msg"></div>
@@ -176,11 +178,13 @@ var FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSfCMIALtna01BLP3eGHnrJIwO
 var RATING_ENTRIES=['entry.1773713668','entry.1124896817','entry.1311617681','entry.783295225']; // Starter, Main, Dessert, Beverage
 document.getElementById('send').onclick=function(){
   var btn=this,msg=document.getElementById('msg');
+  var nm=document.getElementById('cname').value.trim();
+  if(!nm){msg.textContent='Please tell us your name.';return}
   var missing=DISHES.some(function(d,i){return !ratings[i]});
   if(missing){msg.textContent='Please give a star rating to each dish.';return}
   btn.disabled=true;msg.textContent='Sending\u2026';
   var p=new URLSearchParams();
-  p.append('entry.1771837323','Guest (QR page)');
+  p.append('entry.1771837323',nm);
   var dt=new Date(MENU_DATE.replace(/^[A-Za-z]+,\s*/,''));
   if(isNaN(dt.getTime()))dt=new Date();
   var y=dt.getFullYear(),m=dt.getMonth()+1,dd=dt.getDate();
